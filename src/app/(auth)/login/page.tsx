@@ -44,7 +44,7 @@ export default function LoginPage() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold tracking-tight">登录 Loom42</h2>
+        <h2 className="text-2xl font-bold tracking-tight">登录 SAAS</h2>
         <p className="mt-2 text-sm text-muted-foreground">输入您的账号信息以继续</p>
       </div>
 

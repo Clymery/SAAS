@@ -39,7 +39,7 @@ export default function StudioPage() {
           >
             应用模板
           </button>
-          <div className="text-xs text-gray-500">loom42 Studio</div>
+          <div className="text-xs text-gray-500">SAAS Studio</div>
         </div>
       </div>
 

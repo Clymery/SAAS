@@ -80,7 +80,7 @@ export default function RegisterPage() {
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold tracking-tight">注册账号</h2>
-        <p className="mt-2 text-sm text-muted-foreground">创建您的 Loom42 账号</p>
+        <p className="mt-2 text-sm text-muted-foreground">创建您的 SAAS 账号</p>
       </div>
 
       {error && (

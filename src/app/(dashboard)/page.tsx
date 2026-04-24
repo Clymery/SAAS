@@ -99,7 +99,7 @@ export default function DashboardPage() {
       {/* Welcome Banner */}
       <div className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 sm:p-8">
         <h1 className="text-2xl sm:text-3xl font-bold">
-          欢迎来到 Loom42，{session?.user?.name || "设计师"}
+          欢迎来到 SAAS，{session?.user?.name || "设计师"}
         </h1>
         <p className="mt-2 text-indigo-100 max-w-xl">
           开始您的 AI 家纺设计之旅，快速生成高质量的电商素材与设计方案。

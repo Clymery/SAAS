@@ -5,6 +5,8 @@ import { writeFile, mkdir } from "fs/promises"
 import { join } from "path"
 import { v4 as uuidv4 } from "uuid"
 
+export const dynamic = "force-dynamic"
+
 interface AppSession {
   user?: { id?: string }
 }
