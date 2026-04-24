@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  avatar        String?
+  password      String    // hashed
+  role          String    @default("user") // user, admin
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  projects      Project[]
+  assets        Asset[]
+  generations   Generation[]
+  usageStats    UsageStat?
+}
+
+model Project {
+  id            String    @id @default(uuid())
+  name          String
+  description   String?
+  coverImage    String?
+  status        String    @default("active") // active, archived, deleted
+  canvasData    String?   // JSON serialized Fabric.js canvas
+  width         Int       @default(800)
+  height        Int       @default(800)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generations   Generation[]
+}
+
+model Asset {
+  id            String    @id @default(uuid())
+  name          String
+  type          String    // image, background, template, sticker
+  url           String
+  thumbnail     String?
+  tags          String?   // comma-separated
+  metadata      String?   // JSON
+  createdAt     DateTime  @default(now())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Generation {
+  id            String    @id @default(uuid())
+  type          String    // scene, background_removal, batch, upscale
+  status        String    @default("pending") // pending, processing, completed, failed
+  prompt        String?
+  resultUrl     String?
+  error         String?
+  metadata      String?   // JSON: input params
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId     String?
+  project       Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+}
+
+model Template {
+  id            String    @id @default(uuid())
+  name          String
+  description   String?
+  category      String    // platform: taobao, tmall, jd, amazon, etc.
+  scene         String?   // bedroom, living_room, etc.
+  thumbnail     String
+  width         Int
+  height        Int
+  canvasData    String    // JSON: default layers/config
+  isSystem      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+}
+
+model UsageStat {
+  id            String    @id @default(uuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalGenerations Int    @default(0)
+  totalImages   Int       @default(0)
+  storageUsed   Int       @default(0) // bytes
+  monthLimit    Int       @default(100)
+  updatedAt     DateTime  @updatedAt
+}
