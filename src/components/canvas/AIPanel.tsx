@@ -1,23 +1,23 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import { useCanvasStore } from "@/stores/canvasStore"
-import { Button } from "@/components/ui/button"
-import { Loader2, Wand2, Scissors, Sparkles } from "lucide-react"
+import { useCallback, useState } from "react"
 import { FabricImage } from "fabric"
+import { Loader2, Scissors, Sparkles, Wand2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useCanvasStore } from "@/stores/canvasStore"
 
 const STYLE_PRESETS = [
-  { label: "北欧简约", prompt: "北欧简约风格卧室，自然光线，白色床单，木质家具，温馨舒适" },
-  { label: "现代奢华", prompt: "现代奢华风格卧室，金色装饰，大理石纹理，高端酒店感，柔和灯光" },
-  { label: "田园温馨", prompt: "田园温馨风格卧室，碎花图案，暖色调，阳光透过窗帘，舒适惬意" },
-  { label: "日式极简", prompt: "日式极简风格卧室，榻榻米，原木色，简洁线条，宁静禅意" },
-  { label: "酒店风", prompt: "高端酒店风格卧室，整洁铺床，白色床品，落地窗，城市景观" },
+  { label: "简约高级", prompt: "minimal premium product scene, soft natural light, clean composition, realistic texture" },
+  { label: "温暖家居", prompt: "warm home interior scene, cozy fabric texture, natural daylight, commercial product photography" },
+  { label: "清新春夏", prompt: "fresh spring summer bedding scene, airy colors, elegant floral details, refined product styling" },
+  { label: "新中式", prompt: "modern Chinese style interior, elegant patterns, calm neutral palette, premium textile product scene" },
+  { label: "轻奢质感", prompt: "luxury lifestyle product scene, refined material, soft shadows, high-end commercial photography" },
 ]
 
 export default function AIPanel({ projectId }: { projectId: string }) {
-  const canvas = useCanvasStore((s) => s.canvas)
-  const activeObject = useCanvasStore((s) => s.activeObject)
-  const saveState = useCanvasStore((s) => s.saveState)
+  const canvas = useCanvasStore((state) => state.canvas)
+  const activeObject = useCanvasStore((state) => state.activeObject)
+  const saveState = useCanvasStore((state) => state.saveState)
   const [prompt, setPrompt] = useState("")
   const [loading, setLoading] = useState(false)
   const [generatedImages, setGeneratedImages] = useState<string[]>([])
@@ -31,6 +31,7 @@ export default function AIPanel({ projectId }: { projectId: string }) {
     setLoading(true)
     setError("")
     setGeneratedImages([])
+
     try {
       const res = await fetch("/api/generations", {
         method: "POST",
@@ -39,10 +40,10 @@ export default function AIPanel({ projectId }: { projectId: string }) {
           type: "scene",
           prompt: prompt.trim(),
           projectId,
-          metadata: JSON.stringify({ style: "custom" }),
+          metadata: { style: "custom" },
         }),
       })
-      if (!res.ok) throw new Error("生成请求失败")
+      if (!res.ok) throw new Error("创建生成任务失败")
       const generation = await res.json()
 
       await fetch("/api/ai/mock-generate", {
@@ -56,7 +57,7 @@ export default function AIPanel({ projectId }: { projectId: string }) {
         const data = await pollRes.json()
         if (data.status === "completed") {
           clearInterval(poll)
-          setGeneratedImages([data.resultUrl])
+          setGeneratedImages(data.resultUrl ? [data.resultUrl] : [])
           setLoading(false)
         } else if (data.status === "failed") {
           clearInterval(poll)
@@ -64,8 +65,8 @@ export default function AIPanel({ projectId }: { projectId: string }) {
           setLoading(false)
         }
       }, 1000)
-    } catch (e: any) {
-      setError(e.message || "生成失败")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "生成失败")
       setLoading(false)
     }
   }, [prompt, projectId])
@@ -84,7 +85,7 @@ export default function AIPanel({ projectId }: { projectId: string }) {
         canvas.renderAll()
         saveState()
       } catch {
-        setError("背景设置失败")
+        setError("设置背景失败")
       }
     },
     [canvas, saveState]
@@ -94,15 +95,16 @@ export default function AIPanel({ projectId }: { projectId: string }) {
     if (!canvas || !activeObject || activeObject.type !== "image") return
     setBgRemoving(true)
     setError("")
+
     try {
       const dataUrl = activeObject.toDataURL({ format: "png", multiplier: 1 })
       const blob = await (await fetch(dataUrl)).blob()
       const file = new File([blob], "image.png", { type: "image/png" })
-
       const formData = new FormData()
       formData.append("file", file)
+
       const uploadRes = await fetch("/api/upload", { method: "POST", body: formData })
-      if (!uploadRes.ok) throw new Error("上传失败")
+      if (!uploadRes.ok) throw new Error("上传图片失败")
       const { url } = await uploadRes.json()
 
       const res = await fetch("/api/generations", {
@@ -111,10 +113,10 @@ export default function AIPanel({ projectId }: { projectId: string }) {
         body: JSON.stringify({
           type: "background_removal",
           projectId,
-          metadata: JSON.stringify({ inputImageUrl: url }),
+          metadata: { inputImageUrl: url },
         }),
       })
-      if (!res.ok) throw new Error("抠图请求失败")
+      if (!res.ok) throw new Error("创建抠图任务失败")
       const generation = await res.json()
 
       await fetch("/api/ai/mock-generate", {
@@ -150,32 +152,27 @@ export default function AIPanel({ projectId }: { projectId: string }) {
           setBgRemoving(false)
         }
       }, 1000)
-    } catch (e: any) {
-      setError(e.message || "抠图失败")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "抠图失败")
       setBgRemoving(false)
     }
   }, [canvas, activeObject, projectId, saveState])
 
   return (
-    <div className="h-full bg-white border-l overflow-y-auto p-4">
-      <div className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-        <Sparkles className="w-4 h-4" />
-        AI 功能
+    <div className="h-full overflow-y-auto border-l bg-white p-4">
+      <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-700">
+        <Sparkles className="h-4 w-4" />
+        AI 工具
       </div>
 
-      {error && (
-        <div className="mb-3 p-2 bg-red-50 text-red-600 text-xs rounded-md border border-red-100">
-          {error}
-        </div>
-      )}
+      {error && <div className="mb-3 rounded-md border border-red-100 bg-red-50 p-2 text-xs text-red-600">{error}</div>}
 
-      {/* Scene Generation */}
       <div className="mb-6">
-        <label className="block text-xs font-medium text-gray-500 mb-2">场景生成</label>
+        <label className="mb-2 block text-xs font-medium text-gray-500">场景生成</label>
         <textarea
-          className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          className="w-full resize-none rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           rows={4}
-          placeholder="描述你想要的场景，例如：北欧风格卧室，晨光照射，白色床单..."
+          placeholder="描述你想要的商品场景，例如：清爽春夏家纺场景，柔和自然光，浅色背景..."
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
         />
@@ -183,39 +180,33 @@ export default function AIPanel({ projectId }: { projectId: string }) {
           {STYLE_PRESETS.map((preset) => (
             <button
               key={preset.label}
-              className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-md text-gray-600 transition-colors"
+              className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-200"
               onClick={() => setPrompt(preset.prompt)}
             >
               {preset.label}
             </button>
           ))}
         </div>
-        <Button
-          className="w-full mt-2"
-          size="sm"
-          disabled={loading || !prompt.trim()}
-          onClick={handleGenerate}
-        >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Wand2 className="w-4 h-4 mr-1" />}
+        <Button className="mt-2 w-full" size="sm" disabled={loading || !prompt.trim()} onClick={handleGenerate}>
+          {loading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Wand2 className="mr-1 h-4 w-4" />}
           生成场景
         </Button>
       </div>
 
-      {/* Generated Images */}
       {generatedImages.length > 0 && (
         <div className="mb-6">
-          <label className="block text-xs font-medium text-gray-500 mb-2">生成结果</label>
+          <label className="mb-2 block text-xs font-medium text-gray-500">生成结果</label>
           <div className="grid grid-cols-2 gap-2">
-            {generatedImages.map((url, i) => (
+            {generatedImages.map((url, index) => (
               <button
-                key={i}
-                className="relative aspect-square rounded-md overflow-hidden border hover:ring-2 hover:ring-blue-500 transition-all"
+                key={index}
+                className="relative aspect-square overflow-hidden rounded-md border transition-all hover:ring-2 hover:ring-blue-500"
                 onClick={() => handleSetBackground(url)}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt={`generated-${i}`} className="w-full h-full object-cover" />
-                <span className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] py-0.5 text-center">
-                  点击设为背景
+                <img src={url} alt={`generated-${index}`} className="h-full w-full object-cover" />
+                <span className="absolute bottom-0 left-0 right-0 bg-black/50 py-0.5 text-center text-[10px] text-white">
+                  设为背景
                 </span>
               </button>
             ))}
@@ -223,22 +214,13 @@ export default function AIPanel({ projectId }: { projectId: string }) {
         </div>
       )}
 
-      {/* Background Removal */}
       <div className="mb-2">
-        <label className="block text-xs font-medium text-gray-500 mb-2">智能抠图</label>
-        <Button
-          className="w-full"
-          size="sm"
-          variant="outline"
-          disabled={!isImageSelected || bgRemoving}
-          onClick={handleBgRemoval}
-        >
-          {bgRemoving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Scissors className="w-4 h-4 mr-1" />}
-          智能抠图
+        <label className="mb-2 block text-xs font-medium text-gray-500">背景移除</label>
+        <Button className="w-full" size="sm" variant="outline" disabled={!isImageSelected || bgRemoving} onClick={handleBgRemoval}>
+          {bgRemoving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Scissors className="mr-1 h-4 w-4" />}
+          移除背景
         </Button>
-        {!isImageSelected && (
-          <p className="text-[10px] text-gray-400 mt-1 text-center">请先选择一张图片</p>
-        )}
+        {!isImageSelected && <p className="mt-1 text-center text-[10px] text-gray-400">请选择一张图片后再抠图</p>}
       </div>
     </div>
   )

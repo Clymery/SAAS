@@ -4,7 +4,7 @@
 
 ## 项目定位
 
-这个项目面向用户提供的是一个 **家纺行业专用的 AI 电商视觉生成平台** ，核心功能包括：**账号登录、素材上传、AI 批量生成、效果图生图、局部编辑、模板/素材管理、生成结果保存、历史记录查看、下载结果、订阅套餐、积分充值和支付管理**
+这是一个 AI 驱动的电商/营销视觉资产制作 SaaS。用户登录后创建项目，在 Studio 中使用 Fabric.js 编辑画布，通过 AI 生成场景图、抠图结果、背景图和批量变体，并管理素材、模板、生成记录和用量。
 
 ## 技术栈
 
@@ -54,7 +54,7 @@ npx.cmd prisma generate
 - React 组件不要直接调用第三方模型 API；provider 调用应放在服务端 `src/lib/ai` 或 API/worker 中。
 - Fabric 对象变更后要同步 `renderAll()`、必要时 `saveState()`，避免画布和 store 状态漂移。
 - 不要提交真实 API key；新增密钥只写 `.env.local` 示例或文档。
-- 生产前应关闭 `next.config.mjs` 的 `typescript.ignoreBuildErrors` 并修复类型问题。
+- 生产前必须关闭 `next.config.mjs` 的 `typescript.ignoreBuildErrors`，并修复真实类型问题。
 
 ## 后续 AI 接入方向
 
@@ -64,7 +64,7 @@ npx.cmd prisma generate
 2. `POST /api/ai/generate` 或队列 worker 调用真实图片生成 provider。
 3. 下载或保存生成图片，得到可访问 `resultUrl`。
 4. 更新 `Generation` 状态和用量。
-5. 前端轮询 `GET /api/generations/[id]`，展示结果并支持加入画布/设为背景/保存素材。
+5. 前端轮询 `GET /api/generations/[id]`，展示结果并支持加入画布、设为背景、保存素材。
 
 ## 详细文档
 
@@ -76,6 +76,6 @@ npx.cmd prisma generate
 
 ## 已知风险
 
-- 当前部分中文 Markdown/TSX 文案在 PowerShell 输出中显示乱码，疑似历史编码或终端代码页不一致。后续建议单独做 UTF-8 清理。
+- 当前部分 TSX 文案仍可能存在历史乱码，需要逐步清理为 UTF-8。目前已经清理完毕，仅保留巡检。
 - `/api/ai/mock-generate` 只返回 mock URL，没有真实图片文件，预览可能 404。
 - `public/uploads` 与 SQLite 只适合本地开发，生产建议迁移到对象存储和 PostgreSQL。

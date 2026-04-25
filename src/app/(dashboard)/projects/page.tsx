@@ -1,23 +1,22 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import {
-  Plus,
-  Search,
+  AlertTriangle,
+  Clock,
+  Copy,
   LayoutGrid,
+  Layers,
   List,
   Pencil,
-  Copy,
+  Plus,
+  Search,
   Trash2,
-  Clock,
-  Layers,
   X,
-  AlertTriangle,
 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Card,
   CardContent,
@@ -34,6 +33,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -41,6 +42,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
   TableBody,
@@ -49,8 +51,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Project } from "@/types"
 
@@ -58,14 +58,15 @@ type ViewMode = "grid" | "list"
 
 const PRESETS = [
   { label: "淘宝主图", width: 800, height: 800 },
-  { label: "天猫详情", width: 790, height: 400 },
-  { label: "京东", width: 800, height: 800 },
-  { label: "亚马逊", width: 2000, height: 2000 },
-  { label: "自定义", width: 800, height: 800 },
+  { label: "天猫详情图", width: 790, height: 400 },
+  { label: "京东主图", width: 800, height: 800 },
+  { label: "Amazon 主图", width: 2000, height: 2000 },
+  { label: "方形通用图", width: 800, height: 800 },
 ]
 
+const DEFAULT_PRESET = "方形通用图"
+
 export default function ProjectsPage() {
-  // const router = useRouter()
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -73,13 +74,12 @@ export default function ProjectsPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
-
   const [form, setForm] = useState({
     name: "",
     description: "",
     width: 800,
     height: 800,
-    preset: "自定义",
+    preset: DEFAULT_PRESET,
   })
 
   useEffect(() => {
@@ -92,22 +92,29 @@ export default function ProjectsPage() {
 
   const filtered = useMemo(() => {
     if (!search.trim()) return projects
-    return projects.filter((p) =>
-      p.name.toLowerCase().includes(search.toLowerCase())
-    )
+    return projects.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
   }, [projects, search])
 
   const handlePresetChange = (value: string | null) => {
     if (!value) return
     const preset = PRESETS.find((p) => p.label === value)
-    if (preset) {
-      setForm((f) => ({
-        ...f,
-        preset: value,
-        width: preset.width,
-        height: preset.height,
-      }))
-    }
+    if (!preset) return
+    setForm((current) => ({
+      ...current,
+      preset: value,
+      width: preset.width,
+      height: preset.height,
+    }))
+  }
+
+  const resetForm = () => {
+    setForm({
+      name: "",
+      description: "",
+      width: 800,
+      height: 800,
+      preset: DEFAULT_PRESET,
+    })
   }
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -129,7 +136,7 @@ export default function ProjectsPage() {
       if (res.ok) {
         setCreateOpen(false)
         setProjects((prev) => [data, ...prev])
-        setForm({ name: "", description: "", width: 800, height: 800, preset: "自定义" })
+        resetForm()
       }
     } finally {
       setSubmitting(false)
@@ -165,15 +172,14 @@ export default function ProjectsPage() {
     }
   }
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("zh-CN", {
+  const formatDate = (dateStr: string) =>
+    new Date(dateStr).toLocaleDateString("zh-CN", {
       year: "numeric",
       month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     })
-  }
 
   if (loading) {
     return (
@@ -182,7 +188,7 @@ export default function ProjectsPage() {
           <Skeleton className="h-8 w-32" />
           <Skeleton className="h-9 w-28" />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-48" />
           ))}
@@ -193,19 +199,21 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">我的项目</h1>
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <h1 className="text-2xl font-bold">项目管理</h1>
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger>
-            <div className="inline-flex items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground text-sm font-medium whitespace-nowrap transition-all outline-none select-none px-2.5 h-8 gap-1.5 cursor-pointer">
+          <DialogTrigger asChild>
+            <Button>
               <Plus className="mr-2 h-4 w-4" />
               新建项目
-            </div>
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>新建项目</DialogTitle>
-              <DialogDescription>创建一个新的设计项目</DialogDescription>
+              <DialogDescription>
+                创建一个新的视觉项目，并设置基础画布尺寸。
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-2">
@@ -214,29 +222,29 @@ export default function ProjectsPage() {
                   id="project-name"
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  placeholder="输入项目名称"
+                  placeholder="请输入项目名称"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="project-desc">描述</Label>
+                <Label htmlFor="project-desc">项目描述</Label>
                 <Input
                   id="project-desc"
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                  placeholder="可选描述"
+                  placeholder="可选，描述这个项目的用途"
                 />
               </div>
               <div className="space-y-2">
-                <Label>预设尺寸</Label>
-                <Select value={form.preset} onValueChange={(v) => handlePresetChange(v)}>
+                <Label>尺寸预设</Label>
+                <Select value={form.preset} onValueChange={handlePresetChange}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {PRESETS.map((p) => (
-                      <SelectItem key={p.label} value={p.label}>
-                        {p.label} ({p.width}x{p.height})
+                    {PRESETS.map((preset) => (
+                      <SelectItem key={preset.label} value={preset.label}>
+                        {preset.label} ({preset.width}x{preset.height})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -278,8 +286,8 @@ export default function ProjectsPage() {
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="搜索项目..."
             value={search}
@@ -316,8 +324,8 @@ export default function ProjectsPage() {
       {filtered.length === 0 ? (
         <EmptyState
           icon={Layers}
-          title={search ? "未找到匹配项目" : "暂无项目"}
-          description={search ? "请尝试其他搜索关键词" : "创建您的第一个设计项目"}
+          title={search ? "没有匹配的项目" : "还没有项目"}
+          description={search ? "请尝试更换关键词。" : "创建一个项目，开始你的视觉设计。"}
           action={
             search
               ? undefined
@@ -328,16 +336,14 @@ export default function ProjectsPage() {
           }
         />
       ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((project) => (
-            <Card key={project.id} className="group hover:shadow-md transition-shadow">
-              <div className="aspect-video bg-gray-100 relative overflow-hidden rounded-t-xl">
+            <Card key={project.id} className="transition-shadow hover:shadow-md">
+              <div className="relative aspect-video overflow-hidden rounded-t-xl bg-gray-100">
                 {project.coverImage ? (
-                  <img
-                    src={project.coverImage}
-                    alt={project.name}
-                    className="w-full h-full object-cover"
-                  />
+                  // Kept as img because project covers can be local uploads or future signed URLs.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={project.coverImage} alt={project.name} className="h-full w-full object-cover" />
                 ) : (
                   <div className="flex h-full items-center justify-center text-muted-foreground">
                     <Layers className="h-8 w-8 opacity-40" />
@@ -345,14 +351,10 @@ export default function ProjectsPage() {
                 )}
               </div>
               <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-base">{project.name}</CardTitle>
-                    <CardDescription className="mt-1 line-clamp-1">
-                      {project.description || "无描述"}
-                    </CardDescription>
-                  </div>
-                </div>
+                <CardTitle className="text-base">{project.name}</CardTitle>
+                <CardDescription className="mt-1 line-clamp-1">
+                  {project.description || "暂无描述"}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
@@ -364,7 +366,7 @@ export default function ProjectsPage() {
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Link href={`/studio/${project.id}`} className="inline-flex items-center justify-center rounded-lg border border-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors size-6">
+                    <Link href={`/studio/${project.id}`} className="inline-flex size-6 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900">
                       <Pencil className="h-3.5 w-3.5" />
                     </Link>
                     <Button size="icon-xs" variant="ghost" onClick={() => handleDuplicate(project)}>
@@ -399,18 +401,18 @@ export default function ProjectsPage() {
                       {project.name}
                     </Link>
                   </TableCell>
-                  <TableCell className="text-muted-foreground max-w-xs truncate">
-                    {project.description || "—"}
+                  <TableCell className="max-w-xs truncate text-muted-foreground">
+                    {project.description || "无"}
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary">{project.width}x{project.height}</Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-xs">
+                  <TableCell className="text-xs text-muted-foreground">
                     {formatDate(project.updatedAt)}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <Link href={`/studio/${project.id}`} className="inline-flex items-center justify-center rounded-lg border border-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors size-6">
+                      <Link href={`/studio/${project.id}`} className="inline-flex size-6 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900">
                         <Pencil className="h-3.5 w-3.5" />
                       </Link>
                       <Button size="icon-xs" variant="ghost" onClick={() => handleDuplicate(project)}>
@@ -428,7 +430,6 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {/* Delete Confirmation */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <DialogContent>
           <DialogHeader>
@@ -437,7 +438,7 @@ export default function ProjectsPage() {
               确认删除
             </DialogTitle>
             <DialogDescription>
-              此操作无法撤销。您确定要删除这个项目吗？
+              删除后项目会进入回收状态，当前列表中将不再显示。
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

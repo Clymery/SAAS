@@ -2,13 +2,13 @@
 
 import { useState } from "react"
 import { useParams } from "next/navigation"
-import FabricCanvas from "@/components/canvas/FabricCanvas"
-import Toolbar from "@/components/canvas/Toolbar"
-import LayerPanel from "@/components/canvas/LayerPanel"
-import PropertiesPanel from "@/components/canvas/PropertiesPanel"
 import AIPanel from "@/components/canvas/AIPanel"
 import BatchPanel from "@/components/canvas/BatchPanel"
+import FabricCanvas from "@/components/canvas/FabricCanvas"
+import LayerPanel from "@/components/canvas/LayerPanel"
+import PropertiesPanel from "@/components/canvas/PropertiesPanel"
 import TemplateModal from "@/components/canvas/TemplateModal"
+import Toolbar from "@/components/canvas/Toolbar"
 
 type RightPanel = "properties" | "ai" | "batch"
 
@@ -25,28 +25,25 @@ export default function StudioPage() {
   ]
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
-      {/* Top Bar */}
-      <div className="bg-white border-b px-4 h-12 flex items-center justify-between shrink-0">
+    <div className="flex h-screen flex-col bg-gray-50">
+      <div className="flex h-12 shrink-0 items-center justify-between border-b bg-white px-4">
         <div className="flex items-center gap-3">
-          <h1 className="font-semibold text-sm">Project</h1>
+          <h1 className="text-sm font-semibold">Project</h1>
           <span className="text-xs text-gray-400">#{id}</span>
         </div>
         <div className="flex items-center gap-3">
           <button
-            className="text-xs px-3 py-1.5 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition-colors"
+            className="rounded-md bg-gray-800 px-3 py-1.5 text-xs text-white transition-colors hover:bg-gray-700"
             onClick={() => setTemplateOpen(true)}
           >
-            应用模板
+            使用模板
           </button>
           <div className="text-xs text-gray-500">SAAS Studio</div>
         </div>
       </div>
 
-      {/* Main Editor Area */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left: Toolbar */}
-        <div className="w-20 shrink-0 bg-white border-r overflow-y-auto">
+      <div className="flex flex-1 overflow-hidden">
+        <div className="w-20 shrink-0 overflow-y-auto border-r bg-white">
           <Toolbar
             onOpenAI={() => setRightPanel("ai")}
             onOpenBatch={() => setRightPanel("batch")}
@@ -54,28 +51,24 @@ export default function StudioPage() {
           />
         </div>
 
-        {/* Center: Canvas */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex-1 overflow-hidden bg-gray-100">
             <FabricCanvas width={800} height={800} />
           </div>
-
-          {/* Bottom: Layer Panel */}
-          <div className="h-52 shrink-0 bg-white border-t">
+          <div className="h-52 shrink-0 border-t bg-white">
             <LayerPanel />
           </div>
         </div>
 
-        {/* Right: Panel with Tabs */}
-        <div className="w-72 shrink-0 bg-white border-l flex flex-col">
+        <div className="flex w-72 shrink-0 flex-col border-l bg-white">
           <div className="flex border-b">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 className={`flex-1 py-2.5 text-xs font-medium transition-colors ${
                   rightPanel === tab.key
-                    ? "text-gray-900 border-b-2 border-gray-800 bg-gray-50"
-                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                    ? "border-b-2 border-gray-800 bg-gray-50 text-gray-900"
+                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
                 }`}
                 onClick={() => setRightPanel(tab.key)}
               >
@@ -91,7 +84,6 @@ export default function StudioPage() {
         </div>
       </div>
 
-      {/* Template Modal */}
       <TemplateModal open={templateOpen} onClose={() => setTemplateOpen(false)} />
     </div>
   )

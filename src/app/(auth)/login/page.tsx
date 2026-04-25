@@ -4,11 +4,11 @@ import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { AlertCircle, Loader2 } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, AlertCircle } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -31,7 +31,7 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
-        setError("邮箱或密码错误，请重试")
+        setError("邮箱或密码不正确，请检查后重试")
       } else {
         router.push("/")
         router.refresh()
@@ -45,7 +45,9 @@ export default function LoginPage() {
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold tracking-tight">登录 SAAS</h2>
-        <p className="mt-2 text-sm text-muted-foreground">输入您的账号信息以继续</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          进入你的 AI 视觉素材工作台
+        </p>
       </div>
 
       {error && (
@@ -72,7 +74,7 @@ export default function LoginPage() {
           <Input
             id="password"
             type="password"
-            placeholder="••••••••"
+            placeholder="请输入密码"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}

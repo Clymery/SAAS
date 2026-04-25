@@ -1,25 +1,25 @@
 "use client"
 
-import { useRef, useCallback } from "react"
-import { useCanvasStore } from "@/stores/canvasStore"
-import { createImageLayer, createTextLayer, exportCanvas } from "@/lib/canvas"
+import { useCallback, useRef } from "react"
 import {
-  MousePointer2,
+  Download,
   ImagePlus,
-  Type,
+  LayoutTemplate,
+  Maximize,
+  MousePointer2,
+  Package,
   Palette,
-  Undo2,
   Redo2,
+  Scissors,
   Trash2,
+  Type,
+  Undo2,
+  Wand2,
   ZoomIn,
   ZoomOut,
-  Maximize,
-  Download,
-  Wand2,
-  Scissors,
-  Package,
-  LayoutTemplate,
 } from "lucide-react"
+import { createImageLayer, createTextLayer, exportCanvas } from "@/lib/canvas"
+import { useCanvasStore } from "@/stores/canvasStore"
 
 export default function Toolbar({
   onOpenAI,
@@ -40,20 +40,14 @@ export default function Toolbar({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const bgInputRef = useRef<HTMLInputElement>(null)
 
-  const handleAddImage = useCallback(() => {
-    fileInputRef.current?.click()
-  }, [])
-
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0]
       if (!file || !canvas) return
       const reader = new FileReader()
-      reader.onload = (ev) => {
-        const url = ev.target?.result as string
-        if (url) {
-          createImageLayer(canvas, url)
-        }
+      reader.onload = (event) => {
+        const url = event.target?.result as string
+        if (url) createImageLayer(canvas, url)
       }
       reader.readAsDataURL(file)
       e.target.value = ""
@@ -63,12 +57,8 @@ export default function Toolbar({
 
   const handleAddText = useCallback(() => {
     if (!canvas) return
-    createTextLayer(canvas, "Double click to edit")
+    createTextLayer(canvas, "双击编辑文字")
   }, [canvas])
-
-  const handleBgColor = useCallback(() => {
-    bgInputRef.current?.click()
-  }, [])
 
   const handleBgColorChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,26 +73,23 @@ export default function Toolbar({
   const handleDelete = useCallback(() => {
     if (!canvas) return
     const active = canvas.getActiveObject()
-    if (active) {
-      canvas.remove(active)
-      canvas.discardActiveObject()
-      canvas.renderAll()
-      useCanvasStore.setState({ activeObject: null })
-      saveState()
-    }
+    if (!active) return
+    canvas.remove(active)
+    canvas.discardActiveObject()
+    canvas.renderAll()
+    useCanvasStore.setState({ activeObject: null })
+    saveState()
   }, [canvas, saveState])
 
   const handleZoomIn = useCallback(() => {
     if (!canvas) return
-    const zoom = canvas.getZoom()
-    canvas.setZoom(Math.min(zoom + 0.1, 3))
+    canvas.setZoom(Math.min(canvas.getZoom() + 0.1, 3))
     canvas.renderAll()
   }, [canvas])
 
   const handleZoomOut = useCallback(() => {
     if (!canvas) return
-    const zoom = canvas.getZoom()
-    canvas.setZoom(Math.max(zoom - 0.1, 0.2))
+    canvas.setZoom(Math.max(canvas.getZoom() - 0.1, 0.2))
     canvas.renderAll()
   }, [canvas])
 
@@ -125,131 +112,96 @@ export default function Toolbar({
   )
 
   const isImageSelected = activeObject?.type === "image"
-
   const btnClass =
-    "flex flex-col items-center justify-center gap-1 w-full py-3 px-1 rounded-md text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors text-xs"
-
-  const disabledClass = "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-gray-600"
+    "flex w-full flex-col items-center justify-center gap-1 rounded-md px-1 py-3 text-xs text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+  const disabledClass = "cursor-not-allowed opacity-40 hover:bg-transparent hover:text-gray-600"
 
   return (
-    <div className="flex flex-col items-center gap-1 py-2 border-r bg-white w-full h-full overflow-y-auto">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFileChange}
-      />
-      <input
-        ref={bgInputRef}
-        type="color"
-        className="hidden"
-        onChange={handleBgColorChange}
-      />
+    <div className="flex h-full w-full flex-col items-center gap-1 overflow-y-auto border-r bg-white py-2">
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+      <input ref={bgInputRef} type="color" className="hidden" onChange={handleBgColorChange} />
 
-      <button className={btnClass} title="Select">
-        <MousePointer2 className="w-5 h-5" />
-        <span>Select</span>
+      <button className={btnClass} title="选择">
+        <MousePointer2 className="h-5 w-5" />
+        <span>选择</span>
+      </button>
+      <button className={btnClass} onClick={() => fileInputRef.current?.click()} title="添加图片">
+        <ImagePlus className="h-5 w-5" />
+        <span>图片</span>
+      </button>
+      <button className={btnClass} onClick={handleAddText} title="添加文字">
+        <Type className="h-5 w-5" />
+        <span>文字</span>
+      </button>
+      <button className={btnClass} onClick={() => bgInputRef.current?.click()} title="背景颜色">
+        <Palette className="h-5 w-5" />
+        <span>背景</span>
       </button>
 
-      <button className={btnClass} onClick={handleAddImage} title="Add Image">
-        <ImagePlus className="w-5 h-5" />
-        <span>Image</span>
+      <div className="my-1 h-px w-full bg-gray-200" />
+
+      <button className={`${btnClass} ${!canUndo ? disabledClass : ""}`} onClick={() => undo()} disabled={!canUndo} title="撤销">
+        <Undo2 className="h-5 w-5" />
+        <span>撤销</span>
+      </button>
+      <button className={`${btnClass} ${!canRedo ? disabledClass : ""}`} onClick={() => redo()} disabled={!canRedo} title="重做">
+        <Redo2 className="h-5 w-5" />
+        <span>重做</span>
+      </button>
+      <button className={btnClass} onClick={handleDelete} title="删除">
+        <Trash2 className="h-5 w-5" />
+        <span>删除</span>
       </button>
 
-      <button className={btnClass} onClick={handleAddText} title="Add Text">
-        <Type className="w-5 h-5" />
-        <span>Text</span>
+      <div className="my-1 h-px w-full bg-gray-200" />
+
+      <button className={btnClass} onClick={handleZoomIn} title="放大">
+        <ZoomIn className="h-5 w-5" />
+        <span>放大</span>
+      </button>
+      <button className={btnClass} onClick={handleZoomOut} title="缩小">
+        <ZoomOut className="h-5 w-5" />
+        <span>缩小</span>
+      </button>
+      <button className={btnClass} onClick={handleFit} title="适配">
+        <Maximize className="h-5 w-5" />
+        <span>适配</span>
       </button>
 
-      <button className={btnClass} onClick={handleBgColor} title="Background Color">
-        <Palette className="w-5 h-5" />
-        <span>BG Color</span>
-      </button>
+      <div className="my-1 h-px w-full bg-gray-200" />
 
-      <div className="w-full h-px bg-gray-200 my-1" />
-
-      <button
-        className={`${btnClass} ${!canUndo ? disabledClass : ""}`}
-        onClick={() => undo()}
-        disabled={!canUndo}
-        title="Undo"
-      >
-        <Undo2 className="w-5 h-5" />
-        <span>Undo</span>
-      </button>
-
-      <button
-        className={`${btnClass} ${!canRedo ? disabledClass : ""}`}
-        onClick={() => redo()}
-        disabled={!canRedo}
-        title="Redo"
-      >
-        <Redo2 className="w-5 h-5" />
-        <span>Redo</span>
-      </button>
-
-      <button className={btnClass} onClick={handleDelete} title="Delete">
-        <Trash2 className="w-5 h-5" />
-        <span>Delete</span>
-      </button>
-
-      <div className="w-full h-px bg-gray-200 my-1" />
-
-      <button className={btnClass} onClick={handleZoomIn} title="Zoom In">
-        <ZoomIn className="w-5 h-5" />
-        <span>Zoom In</span>
-      </button>
-
-      <button className={btnClass} onClick={handleZoomOut} title="Zoom Out">
-        <ZoomOut className="w-5 h-5" />
-        <span>Zoom Out</span>
-      </button>
-
-      <button className={btnClass} onClick={handleFit} title="Fit to Screen">
-        <Maximize className="w-5 h-5" />
-        <span>Fit</span>
-      </button>
-
-      <div className="w-full h-px bg-gray-200 my-1" />
-
-      <button className={btnClass} onClick={() => handleExport("png")} title="Export PNG">
-        <Download className="w-5 h-5" />
+      <button className={btnClass} onClick={() => handleExport("png")} title="导出 PNG">
+        <Download className="h-5 w-5" />
         <span>PNG</span>
       </button>
-
-      <button className={btnClass} onClick={() => handleExport("jpeg")} title="Export JPEG">
-        <Download className="w-5 h-5" />
+      <button className={btnClass} onClick={() => handleExport("jpeg")} title="导出 JPG">
+        <Download className="h-5 w-5" />
         <span>JPG</span>
       </button>
 
-      <div className="w-full h-px bg-gray-200 my-1" />
+      <div className="my-1 h-px w-full bg-gray-200" />
 
-      {/* AI Buttons */}
       <button className={btnClass} onClick={onOpenAI} title="AI 场景生成">
-        <Wand2 className="w-5 h-5" />
+        <Wand2 className="h-5 w-5" />
         <span>AI 场景</span>
       </button>
-
       <button
         className={`${btnClass} ${!isImageSelected ? disabledClass : ""}`}
         onClick={() => {
           if (isImageSelected) onOpenAI?.()
         }}
         disabled={!isImageSelected}
-        title="智能抠图"
+        title="背景移除"
       >
-        <Scissors className="w-5 h-5" />
+        <Scissors className="h-5 w-5" />
         <span>抠图</span>
       </button>
-
       <button className={btnClass} onClick={onOpenBatch} title="批量生成">
-        <Package className="w-5 h-5" />
+        <Package className="h-5 w-5" />
         <span>批量</span>
       </button>
-
-      <button className={btnClass} onClick={onOpenTemplate} title="模板库">
-        <LayoutTemplate className="w-5 h-5" />
+      <button className={btnClass} onClick={onOpenTemplate} title="模板">
+        <LayoutTemplate className="h-5 w-5" />
         <span>模板</span>
       </button>
     </div>

@@ -1,21 +1,13 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { ArrowDown, ArrowUp, Image as ImageIcon, Move, RotateCw, Type } from "lucide-react"
 import { useCanvasStore } from "@/stores/canvasStore"
-import {
-  ArrowUp,
-  ArrowDown,
-  Type,
-  Image as ImageIcon,
-  Move,
-  RotateCw,
-} from "lucide-react"
 
 export default function PropertiesPanel() {
-  const canvas = useCanvasStore((s) => s.canvas)
-  const activeObject = useCanvasStore((s) => s.activeObject)
-  const saveState = useCanvasStore((s) => s.saveState)
-
+  const canvas = useCanvasStore((state) => state.canvas)
+  const activeObject = useCanvasStore((state) => state.activeObject)
+  const saveState = useCanvasStore((state) => state.saveState)
   const [localValues, setLocalValues] = useState({
     opacity: 1,
     left: 0,
@@ -76,34 +68,29 @@ export default function PropertiesPanel() {
 
   if (!activeObject) {
     return (
-      <div className="h-full bg-white border-l p-4">
-        <p className="text-sm text-gray-400 text-center mt-8">
-          Select an object to edit properties
-        </p>
+      <div className="h-full border-l bg-white p-4">
+        <p className="mt-8 text-center text-sm text-gray-400">请选择一个对象以编辑属性</p>
       </div>
     )
   }
 
   const isText = activeObject.type === "text" || activeObject.type === "i-text"
   const isImage = activeObject.type === "image"
-
   const sectionClass = "mb-4"
-  const labelClass = "block text-xs font-medium text-gray-500 mb-1"
-  const inputClass =
-    "w-full px-2 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+  const labelClass = "mb-1 block text-xs font-medium text-gray-500"
+  const inputClass = "w-full rounded-md border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
   const rowClass = "grid grid-cols-2 gap-2"
 
   return (
-    <div className="h-full bg-white border-l overflow-y-auto">
-      <div className="px-4 py-3 border-b text-sm font-semibold text-gray-700 flex items-center gap-2">
-        {isText ? <Type className="w-4 h-4" /> : isImage ? <ImageIcon className="w-4 h-4" /> : <Move className="w-4 h-4" />}
-        Properties
+    <div className="h-full overflow-y-auto border-l bg-white">
+      <div className="flex items-center gap-2 border-b px-4 py-3 text-sm font-semibold text-gray-700">
+        {isText ? <Type className="h-4 w-4" /> : isImage ? <ImageIcon className="h-4 w-4" /> : <Move className="h-4 w-4" />}
+        属性
       </div>
 
       <div className="p-4">
-        {/* Opacity */}
         <div className={sectionClass}>
-          <label className={labelClass}>Opacity</label>
+          <label className={labelClass}>透明度</label>
           <input
             type="range"
             min={0}
@@ -111,20 +98,17 @@ export default function PropertiesPanel() {
             step={0.01}
             value={localValues.opacity}
             onChange={(e) => {
-              const val = Number(e.target.value)
-              setLocalValues((v) => ({ ...v, opacity: val }))
-              updateObj({ opacity: val })
+              const value = Number(e.target.value)
+              setLocalValues((current) => ({ ...current, opacity: value }))
+              updateObj({ opacity: value })
             }}
             className="w-full"
           />
-          <div className="text-xs text-gray-500 text-right">
-            {Math.round(localValues.opacity * 100)}%
-          </div>
+          <div className="text-right text-xs text-gray-500">{Math.round(localValues.opacity * 100)}%</div>
         </div>
 
-        {/* Position */}
         <div className={sectionClass}>
-          <label className={labelClass}>Position</label>
+          <label className={labelClass}>位置</label>
           <div className={rowClass}>
             <div>
               <span className="text-xs text-gray-400">X</span>
@@ -133,9 +117,9 @@ export default function PropertiesPanel() {
                 className={inputClass}
                 value={localValues.left}
                 onChange={(e) => {
-                  const val = Number(e.target.value)
-                  setLocalValues((v) => ({ ...v, left: val }))
-                  updateObj({ left: val })
+                  const value = Number(e.target.value)
+                  setLocalValues((current) => ({ ...current, left: value }))
+                  updateObj({ left: value })
                 }}
               />
             </div>
@@ -146,18 +130,17 @@ export default function PropertiesPanel() {
                 className={inputClass}
                 value={localValues.top}
                 onChange={(e) => {
-                  const val = Number(e.target.value)
-                  setLocalValues((v) => ({ ...v, top: val }))
-                  updateObj({ top: val })
+                  const value = Number(e.target.value)
+                  setLocalValues((current) => ({ ...current, top: value }))
+                  updateObj({ top: value })
                 }}
               />
             </div>
           </div>
         </div>
 
-        {/* Size */}
         <div className={sectionClass}>
-          <label className={labelClass}>Size</label>
+          <label className={labelClass}>尺寸</label>
           <div className={rowClass}>
             <div>
               <span className="text-xs text-gray-400">W</span>
@@ -166,13 +149,12 @@ export default function PropertiesPanel() {
                 className={inputClass}
                 value={localValues.width}
                 onChange={(e) => {
-                  const val = Number(e.target.value)
-                  setLocalValues((v) => ({ ...v, width: val }))
+                  const value = Number(e.target.value)
+                  setLocalValues((current) => ({ ...current, width: value }))
                   if (isImage) {
-                    const scaleX = val / (activeObject as any).width
-                    updateObj({ scaleX })
+                    updateObj({ scaleX: value / (activeObject as any).width })
                   } else {
-                    updateObj({ width: val })
+                    updateObj({ width: value })
                   }
                 }}
               />
@@ -184,13 +166,12 @@ export default function PropertiesPanel() {
                 className={inputClass}
                 value={localValues.height}
                 onChange={(e) => {
-                  const val = Number(e.target.value)
-                  setLocalValues((v) => ({ ...v, height: val }))
+                  const value = Number(e.target.value)
+                  setLocalValues((current) => ({ ...current, height: value }))
                   if (isImage) {
-                    const scaleY = val / (activeObject as any).height
-                    updateObj({ scaleY })
+                    updateObj({ scaleY: value / (activeObject as any).height })
                   } else {
-                    updateObj({ height: val })
+                    updateObj({ height: value })
                   }
                 }}
               />
@@ -198,51 +179,48 @@ export default function PropertiesPanel() {
           </div>
         </div>
 
-        {/* Rotation */}
         <div className={sectionClass}>
-          <label className={labelClass}>Rotation</label>
+          <label className={labelClass}>旋转</label>
           <div className="flex items-center gap-2">
-            <RotateCw className="w-4 h-4 text-gray-400" />
+            <RotateCw className="h-4 w-4 text-gray-400" />
             <input
               type="number"
               className={inputClass}
               value={localValues.angle}
               onChange={(e) => {
-                const val = Number(e.target.value)
-                setLocalValues((v) => ({ ...v, angle: val }))
-                updateObj({ angle: val })
+                const value = Number(e.target.value)
+                setLocalValues((current) => ({ ...current, angle: value }))
+                updateObj({ angle: value })
               }}
             />
-            <span className="text-xs text-gray-400">°</span>
+            <span className="text-xs text-gray-400">度</span>
           </div>
         </div>
 
-        {/* Text-specific */}
         {isText && (
           <>
             <div className={sectionClass}>
-              <label className={labelClass}>Font Size</label>
+              <label className={labelClass}>字号</label>
               <input
                 type="number"
                 className={inputClass}
                 value={localValues.fontSize}
                 onChange={(e) => {
-                  const val = Number(e.target.value)
-                  setLocalValues((v) => ({ ...v, fontSize: val }))
-                  updateObj({ fontSize: val })
+                  const value = Number(e.target.value)
+                  setLocalValues((current) => ({ ...current, fontSize: value }))
+                  updateObj({ fontSize: value })
                 }}
               />
             </div>
-
             <div className={sectionClass}>
-              <label className={labelClass}>Font Family</label>
+              <label className={labelClass}>字体</label>
               <select
                 className={inputClass}
                 value={localValues.fontFamily}
                 onChange={(e) => {
-                  const val = e.target.value
-                  setLocalValues((v) => ({ ...v, fontFamily: val }))
-                  updateObj({ fontFamily: val })
+                  const value = e.target.value
+                  setLocalValues((current) => ({ ...current, fontFamily: value }))
+                  updateObj({ fontFamily: value })
                 }}
               >
                 <option value="Inter">Inter</option>
@@ -253,98 +231,84 @@ export default function PropertiesPanel() {
                 <option value="sans-serif">Sans Serif</option>
               </select>
             </div>
-
             <div className={sectionClass}>
-              <label className={labelClass}>Color</label>
+              <label className={labelClass}>颜色</label>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
                   value={localValues.fill}
                   onChange={(e) => {
-                    const val = e.target.value
-                    setLocalValues((v) => ({ ...v, fill: val }))
-                    updateObj({ fill: val })
+                    const value = e.target.value
+                    setLocalValues((current) => ({ ...current, fill: value }))
+                    updateObj({ fill: value })
                   }}
-                  className="w-8 h-8 p-0 border rounded cursor-pointer"
+                  className="h-8 w-8 cursor-pointer rounded border p-0"
                 />
                 <span className="text-xs text-gray-500">{localValues.fill}</span>
               </div>
             </div>
-
             <div className={sectionClass}>
-              <label className={labelClass}>Background</label>
+              <label className={labelClass}>背景</label>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
                   value={localValues.backgroundColor === "transparent" ? "#ffffff" : localValues.backgroundColor}
                   onChange={(e) => {
-                    const val = e.target.value
-                    setLocalValues((v) => ({ ...v, backgroundColor: val }))
-                    updateObj({ backgroundColor: val })
+                    const value = e.target.value
+                    setLocalValues((current) => ({ ...current, backgroundColor: value }))
+                    updateObj({ backgroundColor: value })
                   }}
-                  className="w-8 h-8 p-0 border rounded cursor-pointer"
+                  className="h-8 w-8 cursor-pointer rounded border p-0"
                 />
                 <button
                   className="text-xs text-gray-500 underline"
                   onClick={() => {
-                    setLocalValues((v) => ({ ...v, backgroundColor: "transparent" }))
+                    setLocalValues((current) => ({ ...current, backgroundColor: "transparent" }))
                     updateObj({ backgroundColor: "" })
                   }}
                 >
-                  Clear
+                  清除
                 </button>
               </div>
             </div>
-
             <div className={sectionClass}>
-              <label className={labelClass}>Style</label>
+              <label className={labelClass}>样式</label>
               <div className="flex gap-2">
                 <button
-                  className={`px-3 py-1 text-sm border rounded-md ${
-                    localValues.fontWeight === "bold" ? "bg-gray-800 text-white" : "bg-white"
-                  }`}
+                  className={`rounded-md border px-3 py-1 text-sm ${localValues.fontWeight === "bold" ? "bg-gray-800 text-white" : "bg-white"}`}
                   onClick={() => {
                     const next = localValues.fontWeight === "bold" ? "normal" : "bold"
-                    setLocalValues((v) => ({ ...v, fontWeight: next }))
+                    setLocalValues((current) => ({ ...current, fontWeight: next }))
                     updateObj({ fontWeight: next })
                   }}
                 >
-                  Bold
+                  加粗
                 </button>
                 <button
-                  className={`px-3 py-1 text-sm border rounded-md ${
-                    localValues.fontStyle === "italic" ? "bg-gray-800 text-white" : "bg-white"
-                  }`}
+                  className={`rounded-md border px-3 py-1 text-sm ${localValues.fontStyle === "italic" ? "bg-gray-800 text-white" : "bg-white"}`}
                   onClick={() => {
                     const next = localValues.fontStyle === "italic" ? "normal" : "italic"
-                    setLocalValues((v) => ({ ...v, fontStyle: next }))
+                    setLocalValues((current) => ({ ...current, fontStyle: next }))
                     updateObj({ fontStyle: next })
                   }}
                 >
-                  Italic
+                  斜体
                 </button>
               </div>
             </div>
           </>
         )}
 
-        {/* Layer Order */}
         <div className={sectionClass}>
-          <label className={labelClass}>Layer Order</label>
+          <label className={labelClass}>图层顺序</label>
           <div className="flex gap-2">
-            <button
-              className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-sm border rounded-md hover:bg-gray-50"
-              onClick={handleBringForward}
-            >
-              <ArrowUp className="w-4 h-4" />
-              Forward
+            <button className="flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-sm hover:bg-gray-50" onClick={handleBringForward}>
+              <ArrowUp className="h-4 w-4" />
+              前移
             </button>
-            <button
-              className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-sm border rounded-md hover:bg-gray-50"
-              onClick={handleSendBackward}
-            >
-              <ArrowDown className="w-4 h-4" />
-              Backward
+            <button className="flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-sm hover:bg-gray-50" onClick={handleSendBackward}>
+              <ArrowDown className="h-4 w-4" />
+              后移
             </button>
           </div>
         </div>

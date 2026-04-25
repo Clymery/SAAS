@@ -46,7 +46,7 @@ npx prisma migrate dev
 
 ## 风险点
 
-- `typescript.ignoreBuildErrors: true` 会掩盖构建类型问题。
-- 中文文案存在乱码风险。
+- 乱码已经清理完毕，仅保留巡检
 - 本地 SQLite 和 `public/uploads` 不是生产级方案。
 - 当前 mock AI 不生成真实文件。
+- 真实 AI API key 必须只保存在服务端环境变量中。

@@ -1,21 +1,28 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useSession, signOut } from "next-auth/react"
+import { signOut, useSession } from "next-auth/react"
 import {
-  LayoutDashboard,
+  ChevronDown,
+  Compass,
   FolderOpen,
+  HelpCircle,
   ImageIcon,
-  Settings,
+  LayoutDashboard,
+  LayoutTemplate,
   LogOut,
   Menu,
-  X,
+  Settings,
+  ShoppingBag,
+  Sparkles,
   User,
-  ChevronDown,
+  X,
 } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import DashboardBackground from "@/components/dashboard/DashboardBackground"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,15 +30,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 
 const navItems = [
-  { href: "/", label: "首页", icon: LayoutDashboard },
-  { href: "/projects", label: "项目", icon: FolderOpen },
+  { href: "/", label: "仪表盘", icon: LayoutDashboard },
+  { href: "/projects", label: "项目中心", icon: FolderOpen },
   { href: "/assets", label: "素材", icon: ImageIcon },
+  { href: "/templates", label: "模板", icon: LayoutTemplate },
+  { href: "/community", label: "广场", icon: Compass },
+  { href: "/store", label: "商城", icon: ShoppingBag },
   { href: "/settings", label: "设置", icon: Settings },
+  { href: "/help", label: "帮助", icon: HelpCircle },
 ]
+
+function isActivePath(pathname: string, href: string) {
+  return pathname === href || (href !== "/" && pathname.startsWith(`${href}/`))
+}
 
 export default function DashboardLayout({
   children,
@@ -49,15 +63,7 @@ export default function DashboardLayout({
     }
   }, [status, router])
 
-  if (status === "loading") {
-    return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    )
-  }
-
-  if (!session) {
+  if (status === "loading" || !session) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -69,39 +75,52 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="sticky top-0 z-40 bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
+      <nav className="sticky top-0 z-40 border-b bg-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid h-16 grid-cols-[160px_minmax(0,1fr)_260px] items-center gap-4">
             <div className="flex items-center">
-              <Link href="/" className="text-xl font-bold text-foreground mr-8">
+              <Link href="/" className="text-xl font-bold text-foreground">
                 SAAS
               </Link>
-              <div className="hidden md:flex items-center space-x-1">
-                {navItems.map((item) => {
-                  const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                        isActive
-                          ? "bg-gray-100 text-foreground"
-                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                      )}
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {item.label}
-                    </Link>
-                  )
-                })}
-              </div>
             </div>
 
-            <div className="hidden md:flex items-center gap-4">
+            <div className="hidden min-w-0 items-center justify-center gap-2 md:flex">
+              {navItems.map((item) => {
+                const active = isActivePath(pathname, item.href)
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition-colors",
+                      active
+                        ? "border-gray-300 bg-gray-200 text-gray-950 shadow-sm"
+                        : "border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                )
+              })}
+            </div>
+
+            <div className="hidden items-center justify-end gap-3 md:flex">
+              <Link
+                href="/store"
+                className="flex h-8 items-center gap-1.5 rounded-full border border-gray-800 bg-gray-950 px-3 text-xs font-medium leading-none text-white shadow-sm transition-colors hover:bg-gray-900"
+              >
+                <span>订阅会员</span>
+                <span className="h-3.5 w-px bg-white/20" />
+                <span className="flex items-center gap-1">
+                  <Sparkles className="h-3.5 w-3.5 fill-white" />
+                  <span className="tabular-nums">0</span>
+                </span>
+              </Link>
+
               <DropdownMenu>
                 <DropdownMenuTrigger>
-                  <div className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-100 cursor-pointer transition-colors">
+                  <div className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-gray-100">
                     <Avatar size="sm">
                       <AvatarImage src={session.user?.image || ""} />
                       <AvatarFallback>{userInitial}</AvatarFallback>
@@ -115,14 +134,14 @@ export default function DashboardLayout({
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem
                     onClick={() => router.push("/settings")}
-                    className="flex items-center gap-2 cursor-pointer"
+                    className="flex cursor-pointer items-center gap-2"
                   >
                     <User className="h-4 w-4" />
                     个人资料
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => router.push("/settings")}
-                    className="flex items-center gap-2 cursor-pointer"
+                    className="flex cursor-pointer items-center gap-2"
                   >
                     <Settings className="h-4 w-4" />
                     账号设置
@@ -130,7 +149,7 @@ export default function DashboardLayout({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => signOut({ callbackUrl: "/login" })}
-                    className="flex items-center gap-2 text-destructive cursor-pointer"
+                    className="flex cursor-pointer items-center gap-2 text-destructive"
                   >
                     <LogOut className="h-4 w-4" />
                     退出登录
@@ -139,7 +158,7 @@ export default function DashboardLayout({
               </DropdownMenu>
             </div>
 
-            <div className="flex items-center md:hidden">
+            <div className="flex items-center justify-end md:hidden">
               <Button
                 variant="ghost"
                 size="icon"
@@ -153,20 +172,32 @@ export default function DashboardLayout({
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden border-t bg-white">
-            <div className="px-4 pt-2 pb-4 space-y-1">
+          <div className="border-t bg-white md:hidden">
+            <div className="space-y-1 px-4 pb-4 pt-2">
+              <Link
+                href="/store"
+                onClick={() => setMobileMenuOpen(false)}
+                className="mb-2 flex h-10 items-center justify-between rounded-full bg-gray-950 px-4 text-sm font-medium text-white"
+              >
+                <span>订阅会员</span>
+                <span className="flex items-center gap-1">
+                  <Sparkles className="h-4 w-4 fill-white" />
+                  0
+                </span>
+              </Link>
+
               {navItems.map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+                const active = isActivePath(pathname, item.href)
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-gray-100 text-foreground"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      "flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors",
+                      active
+                        ? "border-gray-300 bg-gray-200 text-gray-950 shadow-sm"
+                        : "border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                     )}
                   >
                     <item.icon className="h-4 w-4" />
@@ -174,7 +205,7 @@ export default function DashboardLayout({
                   </Link>
                 )
               })}
-              <div className="border-t pt-2 mt-2">
+              <div className="mt-2 border-t pt-2">
                 <div className="flex items-center gap-3 px-3 py-2">
                   <Avatar size="sm">
                     <AvatarImage src={session.user?.image || ""} />
@@ -186,7 +217,7 @@ export default function DashboardLayout({
                 </div>
                 <button
                   onClick={() => signOut({ callbackUrl: "/login" })}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-gray-50 rounded-md"
+                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive hover:bg-gray-50"
                 >
                   <LogOut className="h-4 w-4" />
                   退出登录
@@ -196,8 +227,13 @@ export default function DashboardLayout({
           </div>
         )}
       </nav>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
+      <main className="relative min-h-[calc(100vh-4rem)] overflow-hidden">
+        <DashboardBackground />
+        <div className="relative z-10 h-[calc(100vh-4rem)] w-full overflow-y-auto">
+          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            {children}
+          </div>
+        </div>
       </main>
     </div>
   )

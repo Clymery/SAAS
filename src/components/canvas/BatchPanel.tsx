@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
-import { useCanvasStore } from "@/stores/canvasStore"
-import { Button } from "@/components/ui/button"
-import { Loader2, Download, ImagePlus, Package } from "lucide-react"
+import { useCallback, useRef, useState } from "react"
 import JSZip from "jszip"
+import { Download, ImagePlus, Loader2, Package } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useCanvasStore } from "@/stores/canvasStore"
 
 interface BatchJob {
   id: string
@@ -13,60 +13,55 @@ interface BatchJob {
 }
 
 const STYLE_PRESETS = [
-  { label: "北欧简约", prompt: "北欧简约风格卧室，自然光线，白色床单，木质家具，温馨舒适" },
-  { label: "现代奢华", prompt: "现代奢华风格卧室，金色装饰，大理石纹理，高端酒店感，柔和灯光" },
-  { label: "田园温馨", prompt: "田园温馨风格卧室，碎花图案，暖色调，阳光透过窗帘，舒适惬意" },
-  { label: "日式极简", prompt: "日式极简风格卧室，榻榻米，原木色，简洁线条，宁静禅意" },
-  { label: "酒店风", prompt: "高端酒店风格卧室，整洁铺床，白色床品，落地窗，城市景观" },
+  { label: "简约高级", prompt: "minimal premium product scene, soft natural light, clean composition" },
+  { label: "温暖家居", prompt: "warm home interior, cozy atmosphere, realistic commercial product photography" },
+  { label: "清新春夏", prompt: "fresh spring summer style, airy colors, refined textile product scene" },
+  { label: "轻奢质感", prompt: "luxury product scene, premium material, elegant lighting" },
 ]
 
 const QUANTITY_OPTIONS = [1, 5, 10, 20]
 
 export default function BatchPanel({ projectId }: { projectId: string }) {
-  const canvas = useCanvasStore((s) => s.canvas)
+  const canvas = useCanvasStore((state) => state.canvas)
   const [prompt, setPrompt] = useState("")
   const [quantity, setQuantity] = useState(5)
-  const [productImageUrl, setProductImageUrl] = useState<string>("")
+  const [productImageUrl, setProductImageUrl] = useState("")
   const [jobs, setJobs] = useState<BatchJob[]>([])
   const [running, setRunning] = useState(false)
   const [error, setError] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFileChange = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      if (!file) return
-      const formData = new FormData()
-      formData.append("file", file)
-      try {
-        const res = await fetch("/api/upload", { method: "POST", body: formData })
-        if (!res.ok) throw new Error("上传失败")
-        const { url } = await res.json()
-        setProductImageUrl(url)
-        setError("")
-      } catch (e: any) {
-        setError(e.message || "上传失败")
-      }
-      e.target.value = ""
-    },
-    []
-  )
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const formData = new FormData()
+    formData.append("file", file)
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: formData })
+      if (!res.ok) throw new Error("上传图片失败")
+      const { url } = await res.json()
+      setProductImageUrl(url)
+      setError("")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "上传图片失败")
+    }
+    e.target.value = ""
+  }, [])
 
   const useCanvasImage = useCallback(() => {
     if (!canvas) return
     const active = canvas.getActiveObject()
     if (active && active.type === "image") {
-      const dataUrl = active.toDataURL({ format: "png", multiplier: 1 })
-      setProductImageUrl(dataUrl)
+      setProductImageUrl(active.toDataURL({ format: "png", multiplier: 1 }))
       setError("")
     } else {
-      setError("请先选择画布中的一张图片")
+      setError("请先在画布中选择一张图片")
     }
   }, [canvas])
 
   const runBatch = useCallback(async () => {
     if (!prompt.trim()) {
-      setError("请输入场景描述")
+      setError("请输入批量生成提示词")
       return
     }
     setRunning(true)
@@ -80,14 +75,13 @@ export default function BatchPanel({ projectId }: { projectId: string }) {
     setJobs(newJobs)
 
     const updateJob = (id: string, updates: Partial<BatchJob>) => {
-      setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, ...updates } : j)))
+      setJobs((prev) => prev.map((job) => (job.id === id ? { ...job, ...updates } : job)))
     }
 
     await Promise.all(
       newJobs.map(async (job) => {
         try {
           updateJob(job.id, { status: "processing" })
-
           const res = await fetch("/api/generations", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -95,23 +89,16 @@ export default function BatchPanel({ projectId }: { projectId: string }) {
               type: "batch",
               prompt: prompt.trim(),
               projectId,
-              metadata: JSON.stringify({
-                inputImageUrl: productImageUrl || undefined,
-                style: "batch",
-              }),
+              metadata: { inputImageUrl: productImageUrl || undefined, style: "batch" },
             }),
           })
-          if (!res.ok) throw new Error("请求失败")
+          if (!res.ok) throw new Error("创建批量任务失败")
           const generation = await res.json()
 
           await fetch("/api/ai/mock-generate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              type: "batch",
-              generationId: generation.id,
-              inputImageUrl: productImageUrl || undefined,
-            }),
+            body: JSON.stringify({ type: "batch", generationId: generation.id, inputImageUrl: productImageUrl || undefined }),
           })
 
           await new Promise<void>((resolve, reject) => {
@@ -146,15 +133,15 @@ export default function BatchPanel({ projectId }: { projectId: string }) {
   }, [])
 
   const handleDownloadZip = useCallback(async () => {
-    const completed = jobs.filter((j) => j.status === "completed" && j.resultUrl)
+    const completed = jobs.filter((job) => job.status === "completed" && job.resultUrl)
     if (completed.length === 0) return
     const zip = new JSZip()
     await Promise.all(
-      completed.map(async (job, i) => {
+      completed.map(async (job, index) => {
         if (!job.resultUrl) return
         const res = await fetch(job.resultUrl)
         const blob = await res.blob()
-        zip.file(`batch-result-${i + 1}.jpg`, blob)
+        zip.file(`batch-result-${index + 1}.jpg`, blob)
       })
     )
     const content = await zip.generateAsync({ type: "blob" })
@@ -164,50 +151,44 @@ export default function BatchPanel({ projectId }: { projectId: string }) {
     link.click()
   }, [jobs])
 
-  const completedCount = jobs.filter((j) => j.status === "completed").length
+  const completedCount = jobs.filter((job) => job.status === "completed").length
   const progress = jobs.length > 0 ? Math.round((completedCount / jobs.length) * 100) : 0
 
   return (
-    <div className="h-full bg-white border-l overflow-y-auto p-4">
-      <div className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-        <Package className="w-4 h-4" />
+    <div className="h-full overflow-y-auto border-l bg-white p-4">
+      <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-700">
+        <Package className="h-4 w-4" />
         批量生成
       </div>
 
-      {error && (
-        <div className="mb-3 p-2 bg-red-50 text-red-600 text-xs rounded-md border border-red-100">
-          {error}
-        </div>
-      )}
+      {error && <div className="mb-3 rounded-md border border-red-100 bg-red-50 p-2 text-xs text-red-600">{error}</div>}
 
-      {/* Product Image */}
       <div className="mb-4">
-        <label className="block text-xs font-medium text-gray-500 mb-2">产品图片</label>
-        <div className="flex gap-2 mb-2">
+        <label className="mb-2 block text-xs font-medium text-gray-500">商品图片</label>
+        <div className="mb-2 flex gap-2">
           <Button size="sm" variant="outline" className="flex-1" onClick={useCanvasImage}>
             使用画布图片
           </Button>
           <Button size="sm" variant="outline" className="flex-1" onClick={() => fileInputRef.current?.click()}>
-            <ImagePlus className="w-3.5 h-3.5 mr-1" />
-            上传新图
+            <ImagePlus className="mr-1 h-3.5 w-3.5" />
+            上传图片
           </Button>
         </div>
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
         {productImageUrl && (
-          <div className="mt-2 rounded-md overflow-hidden border aspect-video bg-gray-50">
+          <div className="mt-2 aspect-video overflow-hidden rounded-md border bg-gray-50">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={productImageUrl} alt="product" className="w-full h-full object-contain" />
+            <img src={productImageUrl} alt="product" className="h-full w-full object-contain" />
           </div>
         )}
       </div>
 
-      {/* Prompt */}
       <div className="mb-4">
-        <label className="block text-xs font-medium text-gray-500 mb-2">场景描述</label>
+        <label className="mb-2 block text-xs font-medium text-gray-500">生成提示词</label>
         <textarea
-          className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          className="w-full resize-none rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           rows={3}
-          placeholder="描述场景风格..."
+          placeholder="描述要批量生成的场景风格..."
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
         />
@@ -215,7 +196,7 @@ export default function BatchPanel({ projectId }: { projectId: string }) {
           {STYLE_PRESETS.map((preset) => (
             <button
               key={preset.label}
-              className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-md text-gray-600 transition-colors"
+              className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-200"
               onClick={() => setPrompt(preset.prompt)}
             >
               {preset.label}
@@ -224,65 +205,43 @@ export default function BatchPanel({ projectId }: { projectId: string }) {
         </div>
       </div>
 
-      {/* Quantity */}
       <div className="mb-4">
-        <label className="block text-xs font-medium text-gray-500 mb-2">生成数量</label>
+        <label className="mb-2 block text-xs font-medium text-gray-500">生成数量</label>
         <div className="flex gap-2">
-          {QUANTITY_OPTIONS.map((q) => (
+          {QUANTITY_OPTIONS.map((option) => (
             <button
-              key={q}
-              className={`flex-1 py-1.5 text-sm border rounded-md transition-colors ${
-                quantity === q ? "bg-gray-800 text-white border-gray-800" : "bg-white text-gray-600 hover:bg-gray-50"
+              key={option}
+              className={`flex-1 rounded-md border py-1.5 text-sm transition-colors ${
+                quantity === option ? "border-gray-800 bg-gray-800 text-white" : "bg-white text-gray-600 hover:bg-gray-50"
               }`}
-              onClick={() => setQuantity(q)}
+              onClick={() => setQuantity(option)}
             >
-              {q}
+              {option}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Run */}
-      <Button className="w-full mb-4" size="sm" disabled={running || !prompt.trim()} onClick={runBatch}>
-        {running ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Package className="w-4 h-4 mr-1" />}
-        批量生成
+      <Button className="mb-4 w-full" size="sm" disabled={running || !prompt.trim()} onClick={runBatch}>
+        {running ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Package className="mr-1 h-4 w-4" />}
+        开始批量生成
       </Button>
 
-      {/* Progress */}
       {jobs.length > 0 && (
         <div className="mb-4">
-          <div className="flex justify-between text-xs text-gray-500 mb-1">
+          <div className="mb-1 flex justify-between text-xs text-gray-500">
             <span>进度</span>
             <span>{completedCount} / {jobs.length}</span>
           </div>
-          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-blue-500 transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
+          <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+            <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${progress}%` }} />
           </div>
           <div className="mt-2 space-y-1">
-            {jobs.map((job, i) => (
+            {jobs.map((job, index) => (
               <div key={job.id} className="flex items-center justify-between text-xs">
-                <span className="text-gray-600">任务 {i + 1}</span>
-                <span
-                  className={`${
-                    job.status === "completed"
-                      ? "text-green-600"
-                      : job.status === "failed"
-                      ? "text-red-500"
-                      : job.status === "processing"
-                      ? "text-blue-500"
-                      : "text-gray-400"
-                  }`}
-                >
-                  {job.status === "completed"
-                    ? "已完成"
-                    : job.status === "failed"
-                    ? "失败"
-                    : job.status === "processing"
-                    ? "生成中..."
-                    : "等待中"}
+                <span className="text-gray-600">任务 {index + 1}</span>
+                <span className={job.status === "completed" ? "text-green-600" : job.status === "failed" ? "text-red-500" : job.status === "processing" ? "text-blue-500" : "text-gray-400"}>
+                  {job.status === "completed" ? "已完成" : job.status === "failed" ? "失败" : job.status === "processing" ? "生成中..." : "等待中"}
                 </span>
               </div>
             ))}
@@ -290,29 +249,28 @@ export default function BatchPanel({ projectId }: { projectId: string }) {
         </div>
       )}
 
-      {/* Results */}
       {completedCount > 0 && (
         <div>
-          <div className="flex items-center justify-between mb-2">
+          <div className="mb-2 flex items-center justify-between">
             <label className="block text-xs font-medium text-gray-500">生成结果</label>
             <button className="text-xs text-blue-600 hover:underline" onClick={handleDownloadZip}>
-              下载全部 (ZIP)
+              下载全部 ZIP
             </button>
           </div>
           <div className="grid grid-cols-2 gap-2">
             {jobs.map(
-              (job, i) =>
+              (job, index) =>
                 job.resultUrl && (
-                  <div key={job.id} className="relative group">
-                    <div className="aspect-square rounded-md overflow-hidden border bg-gray-50">
+                  <div key={job.id} className="group relative">
+                    <div className="aspect-square overflow-hidden rounded-md border bg-gray-50">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={job.resultUrl} alt={`result-${i}`} className="w-full h-full object-cover" />
+                      <img src={job.resultUrl} alt={`result-${index}`} className="h-full w-full object-cover" />
                     </div>
                     <button
-                      className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
-                      onClick={() => handleDownload(job.resultUrl!, i)}
+                      className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                      onClick={() => handleDownload(job.resultUrl!, index)}
                     >
-                      <Download className="w-5 h-5" />
+                      <Download className="h-5 w-5" />
                     </button>
                   </div>
                 )

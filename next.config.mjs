@@ -7,9 +7,6 @@ const nextConfig = {
   },
   images: {
     domains: ['localhost']
-  },
-  typescript: {
-    ignoreBuildErrors: true
   }
 }
 

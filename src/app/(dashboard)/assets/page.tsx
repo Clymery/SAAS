@@ -1,20 +1,18 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useDropzone } from "react-dropzone"
 import {
-  Upload,
-  ImageIcon,
-  Trash2,
-  X,
-  Search,
   FileImage,
+  ImageIcon,
   Monitor,
+  Search,
+  Trash2,
+  Upload,
+  X,
 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogContent,
@@ -23,8 +21,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Asset } from "@/types"
 
@@ -44,7 +44,6 @@ export default function AssetsPage() {
   const [previewAsset, setPreviewAsset] = useState<Asset | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
-
   const [previewFile, setPreviewFile] = useState<string | null>(null)
   const [uploadName, setUploadName] = useState("")
   const [uploadType, setUploadType] = useState("product")
@@ -85,10 +84,7 @@ export default function AssetsPage() {
     try {
       const formData = new FormData()
       formData.append("file", fileToUpload)
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      })
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData })
       const uploadData = await uploadRes.json()
       if (!uploadRes.ok) throw new Error(uploadData.error || "Upload failed")
 
@@ -119,14 +115,14 @@ export default function AssetsPage() {
 
   const handleDelete = async () => {
     if (!deleteId) return
-    // Note: API doesn't have DELETE for assets, we remove from UI for now
-    setAssets((prev) => prev.filter((a) => a.id !== deleteId))
+    // TODO: 增加 DELETE /api/assets/[id] 后改为真实删除。
+    setAssets((prev) => prev.filter((asset) => asset.id !== deleteId))
     setDeleteId(null)
     setPreviewAsset(null)
   }
 
-  const filtered = assets.filter((a) =>
-    a.name.toLowerCase().includes(search.toLowerCase())
+  const filtered = assets.filter((asset) =>
+    asset.name.toLowerCase().includes(search.toLowerCase())
   )
 
   const typeLabel = (type: string) => {
@@ -145,7 +141,7 @@ export default function AssetsPage() {
           <Skeleton className="h-8 w-24" />
           <Skeleton className="h-9 w-24" />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="aspect-square" />
           ))}
@@ -156,26 +152,26 @@ export default function AssetsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">素材库</h1>
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <h1 className="text-2xl font-bold">素材管理</h1>
         <Button onClick={() => setUploadOpen(true)}>
           <Upload className="mr-2 h-4 w-4" />
           上传素材
         </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
-            {TABS.map((t) => (
-              <TabsTrigger key={t.value} value={t.value}>
-                {t.label}
+            {TABS.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value}>
+                {tab.label}
               </TabsTrigger>
             ))}
           </TabsList>
         </Tabs>
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="搜索素材..."
             value={search}
@@ -196,36 +192,27 @@ export default function AssetsPage() {
       {filtered.length === 0 ? (
         <EmptyState
           icon={ImageIcon}
-          title={search || activeTab !== "all" ? "未找到素材" : "素材库为空"}
-          description={
-            search || activeTab !== "all"
-              ? "尝试调整筛选条件"
-              : "上传您的第一张素材图片"
-          }
+          title={search || activeTab !== "all" ? "没有匹配的素材" : "素材库为空"}
+          description={search || activeTab !== "all" ? "请调整筛选条件。" : "上传商品图、背景或模板素材。"}
           action={
             search || activeTab !== "all"
               ? undefined
-              : {
-                  label: "上传素材",
-                  onClick: () => setUploadOpen(true),
-                }
+              : { label: "上传素材", onClick: () => setUploadOpen(true) }
           }
         />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {filtered.map((asset) => (
             <div
               key={asset.id}
-              className="group relative rounded-lg border bg-white overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+              className="group relative cursor-pointer overflow-hidden rounded-lg border bg-white transition-shadow hover:shadow-md"
               onClick={() => setPreviewAsset(asset)}
             >
-              <div className="aspect-square bg-gray-100 relative">
+              <div className="relative aspect-square bg-gray-100">
                 {asset.thumbnail ? (
-                  <img
-                    src={asset.thumbnail}
-                    alt={asset.name}
-                    className="w-full h-full object-cover"
-                  />
+                  // Kept as img because asset URLs can be local uploads or future signed URLs.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={asset.thumbnail} alt={asset.name} className="h-full w-full object-cover" />
                 ) : (
                   <div className="flex h-full items-center justify-center text-muted-foreground">
                     <FileImage className="h-8 w-8 opacity-40" />
@@ -233,8 +220,8 @@ export default function AssetsPage() {
                 )}
               </div>
               <div className="p-3">
-                <p className="text-sm font-medium truncate">{asset.name}</p>
-                <div className="flex items-center justify-between mt-1">
+                <p className="truncate text-sm font-medium">{asset.name}</p>
+                <div className="mt-1 flex items-center justify-between">
                   <Badge variant="secondary" className="text-xs">
                     {typeLabel(asset.type)}
                   </Badge>
@@ -243,7 +230,7 @@ export default function AssetsPage() {
                       e.stopPropagation()
                       setDeleteId(asset.id)
                     }}
-                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 text-destructive transition-opacity"
+                    className="rounded p-1 text-destructive opacity-0 transition-opacity hover:bg-destructive/10 group-hover:opacity-100"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -254,43 +241,37 @@ export default function AssetsPage() {
         </div>
       )}
 
-      {/* Upload Modal */}
       <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>上传素材</DialogTitle>
-            <DialogDescription>拖拽或点击选择图片文件</DialogDescription>
+            <DialogDescription>选择一张图片并保存到素材库。</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {!previewFile ? (
               <div
                 {...getRootProps()}
-                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                  isDragActive
-                    ? "border-primary bg-primary/5"
-                    : "border-gray-300 hover:border-gray-400"
+                className={`cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
+                  isDragActive ? "border-primary bg-primary/5" : "border-gray-300 hover:border-gray-400"
                 }`}
               >
                 <input {...getInputProps()} />
-                <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+                <Upload className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
-                  {isDragActive ? "释放以上传文件" : "拖拽文件到此处，或点击选择"}
+                  {isDragActive ? "松开以上传图片" : "拖拽图片到这里，或点击选择文件"}
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="relative aspect-video rounded-lg overflow-hidden border bg-gray-100">
-                  <img
-                    src={previewFile}
-                    alt="Preview"
-                    className="w-full h-full object-contain"
-                  />
+                <div className="relative aspect-video overflow-hidden rounded-lg border bg-gray-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={previewFile} alt="Preview" className="h-full w-full object-contain" />
                   <button
                     onClick={() => {
                       setPreviewFile(null)
                       setFileToUpload(null)
                     }}
-                    className="absolute top-2 right-2 p-1 rounded-full bg-black/50 text-white hover:bg-black/70"
+                    className="absolute right-2 top-2 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -301,11 +282,11 @@ export default function AssetsPage() {
                     id="asset-name"
                     value={uploadName}
                     onChange={(e) => setUploadName(e.target.value)}
-                    placeholder="输入素材名称"
+                    placeholder="请输入素材名称"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="asset-type">类型</Label>
+                  <Label htmlFor="asset-type">素材类型</Label>
                   <select
                     id="asset-type"
                     value={uploadType}
@@ -331,22 +312,17 @@ export default function AssetsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Preview Modal */}
       <Dialog open={!!previewAsset} onOpenChange={(open) => !open && setPreviewAsset(null)}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{previewAsset?.name}</DialogTitle>
-            <DialogDescription>
-              {previewAsset && typeLabel(previewAsset.type)}
-            </DialogDescription>
+            <DialogDescription>{previewAsset && typeLabel(previewAsset.type)}</DialogDescription>
           </DialogHeader>
-          <div className="flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden max-h-[60vh]">
+          <div className="flex max-h-[60vh] items-center justify-center overflow-hidden rounded-lg bg-gray-100">
             {previewAsset?.url ? (
-              <img
-                src={previewAsset.url}
-                alt={previewAsset.name}
-                className="max-w-full max-h-[60vh] object-contain"
-              />
+              // Kept as img because asset URLs can be local uploads or future signed URLs.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={previewAsset.url} alt={previewAsset.name} className="max-h-[60vh] max-w-full object-contain" />
             ) : (
               <FileImage className="h-16 w-16 text-muted-foreground" />
             )}
@@ -363,7 +339,6 @@ export default function AssetsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <DialogContent>
           <DialogHeader>
@@ -371,7 +346,9 @@ export default function AssetsPage() {
               <Monitor className="h-5 w-5 text-destructive" />
               确认删除
             </DialogTitle>
-            <DialogDescription>确定要删除这个素材吗？此操作无法撤销。</DialogDescription>
+            <DialogDescription>
+              当前只会从界面中移除该素材，后续需要补充真实删除 API。
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteId(null)}>

@@ -4,11 +4,11 @@ import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { AlertCircle, Loader2 } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, AlertCircle } from "lucide-react"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -25,7 +25,7 @@ export default function RegisterPage() {
       return false
     }
     if (password.length < 6) {
-      setError("密码至少需要6位")
+      setError("密码至少需要 6 位")
       return false
     }
     if (password !== confirmPassword) {
@@ -52,11 +52,10 @@ export default function RegisterPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || "注册失败，请重试")
+        setError(data.error || "注册失败，请稍后重试")
         return
       }
 
-      // Auto login after registration
       const result = await signIn("credentials", {
         email,
         password,
@@ -79,8 +78,10 @@ export default function RegisterPage() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold tracking-tight">注册账号</h2>
-        <p className="mt-2 text-sm text-muted-foreground">创建您的 SAAS 账号</p>
+        <h2 className="text-2xl font-bold tracking-tight">创建账号</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          注册你的 SAAS 工作台账号
+        </p>
       </div>
 
       {error && (
@@ -96,7 +97,7 @@ export default function RegisterPage() {
           <Input
             id="name"
             type="text"
-            placeholder="您的姓名"
+            placeholder="请输入姓名"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -117,7 +118,7 @@ export default function RegisterPage() {
           <Input
             id="password"
             type="password"
-            placeholder="••••••••"
+            placeholder="请输入密码"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -128,7 +129,7 @@ export default function RegisterPage() {
           <Input
             id="confirmPassword"
             type="password"
-            placeholder="••••••••"
+            placeholder="请再次输入密码"
             required
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -149,7 +150,7 @@ export default function RegisterPage() {
       <p className="text-center text-sm text-muted-foreground">
         已有账号？{" "}
         <Link href="/login" className="font-medium text-primary hover:underline">
-          立即登录
+          返回登录
         </Link>
       </p>
     </div>

@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
-import { User, Lock, BarChart3, Loader2, Save } from "lucide-react"
+import { BarChart3, Loader2, Lock, Save, User } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface UsageStats {
   totalGenerations: number
@@ -25,17 +25,8 @@ export default function SettingsPage() {
   const [loadingUsage, setLoadingUsage] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
-
-  const [profile, setProfile] = useState({
-    name: "",
-    email: "",
-  })
-
-  const [password, setPassword] = useState({
-    current: "",
-    new: "",
-    confirm: "",
-  })
+  const [profile, setProfile] = useState({ name: "", email: "" })
+  const [password, setPassword] = useState({ current: "", next: "", confirm: "" })
 
   useEffect(() => {
     if (session?.user) {
@@ -58,12 +49,12 @@ export default function SettingsPage() {
     setSaving(true)
     setMessage(null)
     try {
-      // Mock profile update - in real app this would call an API
-      await new Promise((r) => setTimeout(r, 500))
+      // TODO: 增加真实 profile update API。
+      await new Promise((resolve) => setTimeout(resolve, 500))
       await update({ name: profile.name })
-      setMessage({ type: "success", text: "个人资料已更新" })
+      setMessage({ type: "success", text: "个人资料已保存" })
     } catch {
-      setMessage({ type: "error", text: "更新失败" })
+      setMessage({ type: "error", text: "保存失败，请稍后重试" })
     } finally {
       setSaving(false)
     }
@@ -71,21 +62,22 @@ export default function SettingsPage() {
 
   const handlePasswordSave = async () => {
     setMessage(null)
-    if (password.new !== password.confirm) {
+    if (password.next !== password.confirm) {
       setMessage({ type: "error", text: "两次输入的新密码不一致" })
       return
     }
-    if (password.new.length < 6) {
-      setMessage({ type: "error", text: "新密码至少需要6位" })
+    if (password.next.length < 6) {
+      setMessage({ type: "error", text: "新密码至少需要 6 位" })
       return
     }
     setSaving(true)
     try {
-      await new Promise((r) => setTimeout(r, 500))
-      setMessage({ type: "success", text: "密码修改成功" })
-      setPassword({ current: "", new: "", confirm: "" })
+      // TODO: 增加真实 password update API。
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      setMessage({ type: "success", text: "密码已更新" })
+      setPassword({ current: "", next: "", confirm: "" })
     } catch {
-      setMessage({ type: "error", text: "密码修改失败" })
+      setMessage({ type: "error", text: "密码更新失败" })
     } finally {
       setSaving(false)
     }
@@ -94,7 +86,7 @@ export default function SettingsPage() {
   const userInitial = session?.user?.name?.[0] || session?.user?.email?.[0] || "U"
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="max-w-3xl space-y-6">
       <h1 className="text-2xl font-bold">设置</h1>
 
       {message && (
@@ -115,15 +107,15 @@ export default function SettingsPage() {
           </TabsTrigger>
           <TabsTrigger value="usage" className="flex items-center gap-1.5">
             <BarChart3 className="h-4 w-4" />
-            使用统计
+            用量统计
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="profile" className="space-y-4 mt-4">
+        <TabsContent value="profile" className="mt-4 space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>个人资料</CardTitle>
-              <CardDescription>管理您的个人信息和头像</CardDescription>
+              <CardDescription>管理你的账号基础信息。</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center gap-4">
@@ -132,10 +124,14 @@ export default function SettingsPage() {
                   <AvatarFallback className="text-lg">{userInitial}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <Button variant="outline" size="sm" onClick={() => setMessage({ type: "success", text: "头像上传功能即将上线" })}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setMessage({ type: "success", text: "头像上传功能待接入" })}
+                  >
                     更换头像
                   </Button>
-                  <p className="text-xs text-muted-foreground mt-1">支持 JPG、PNG 格式，最大 2MB</p>
+                  <p className="mt-1 text-xs text-muted-foreground">支持 JPG、PNG，建议小于 2MB。</p>
                 </div>
               </div>
               <div className="grid gap-4">
@@ -144,29 +140,19 @@ export default function SettingsPage() {
                   <Input
                     id="name"
                     value={profile.name}
-                    onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))}
-                    placeholder="您的姓名"
+                    onChange={(e) => setProfile((current) => ({ ...current, name: e.target.value }))}
+                    placeholder="请输入姓名"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">邮箱</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={profile.email}
-                    disabled
-                    placeholder="您的邮箱"
-                  />
-                  <p className="text-xs text-muted-foreground">邮箱地址暂不支持修改</p>
+                  <Input id="email" type="email" value={profile.email} disabled />
+                  <p className="text-xs text-muted-foreground">邮箱暂不支持修改。</p>
                 </div>
               </div>
               <div className="flex justify-end">
                 <Button onClick={handleProfileSave} disabled={saving}>
-                  {saving ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-2 h-4 w-4" />
-                  )}
+                  {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                   保存
                 </Button>
               </div>
@@ -174,11 +160,11 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="password" className="space-y-4 mt-4">
+        <TabsContent value="password" className="mt-4 space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>修改密码</CardTitle>
-              <CardDescription>更新您的登录密码</CardDescription>
+              <CardDescription>更新你的登录密码。</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -187,8 +173,8 @@ export default function SettingsPage() {
                   id="current-password"
                   type="password"
                   value={password.current}
-                  onChange={(e) => setPassword((p) => ({ ...p, current: e.target.value }))}
-                  placeholder="输入当前密码"
+                  onChange={(e) => setPassword((current) => ({ ...current, current: e.target.value }))}
+                  placeholder="请输入当前密码"
                 />
               </div>
               <div className="space-y-2">
@@ -196,9 +182,9 @@ export default function SettingsPage() {
                 <Input
                   id="new-password"
                   type="password"
-                  value={password.new}
-                  onChange={(e) => setPassword((p) => ({ ...p, new: e.target.value }))}
-                  placeholder="输入新密码"
+                  value={password.next}
+                  onChange={(e) => setPassword((current) => ({ ...current, next: e.target.value }))}
+                  placeholder="请输入新密码"
                 />
               </div>
               <div className="space-y-2">
@@ -207,17 +193,13 @@ export default function SettingsPage() {
                   id="confirm-password"
                   type="password"
                   value={password.confirm}
-                  onChange={(e) => setPassword((p) => ({ ...p, confirm: e.target.value }))}
-                  placeholder="再次输入新密码"
+                  onChange={(e) => setPassword((current) => ({ ...current, confirm: e.target.value }))}
+                  placeholder="请再次输入新密码"
                 />
               </div>
               <div className="flex justify-end">
                 <Button onClick={handlePasswordSave} disabled={saving}>
-                  {saving ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-2 h-4 w-4" />
-                  )}
+                  {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                   更新密码
                 </Button>
               </div>
@@ -225,11 +207,11 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="usage" className="space-y-4 mt-4">
+        <TabsContent value="usage" className="mt-4 space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>使用统计</CardTitle>
-              <CardDescription>查看您的账号使用情况和额度</CardDescription>
+              <CardTitle>用量统计</CardTitle>
+              <CardDescription>查看当前账号的生成和存储用量。</CardDescription>
             </CardHeader>
             <CardContent>
               {loadingUsage ? (
@@ -239,30 +221,30 @@ export default function SettingsPage() {
                   <Skeleton className="h-16 w-full" />
                 </div>
               ) : usage ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="rounded-lg border p-4">
-                    <p className="text-sm text-muted-foreground">本月生成次数</p>
-                    <p className="text-2xl font-bold mt-1">{usage.totalGenerations}</p>
+                    <p className="text-sm text-muted-foreground">AI 生成次数</p>
+                    <p className="mt-1 text-2xl font-bold">{usage.totalGenerations}</p>
                   </div>
                   <div className="rounded-lg border p-4">
                     <p className="text-sm text-muted-foreground">剩余额度</p>
-                    <p className="text-2xl font-bold mt-1">
+                    <p className="mt-1 text-2xl font-bold">
                       {Math.max(0, usage.monthLimit - usage.totalGenerations)}
                     </p>
                   </div>
                   <div className="rounded-lg border p-4">
-                    <p className="text-sm text-muted-foreground">已生成图片数</p>
-                    <p className="text-2xl font-bold mt-1">{usage.totalImages}</p>
+                    <p className="text-sm text-muted-foreground">图片数量</p>
+                    <p className="mt-1 text-2xl font-bold">{usage.totalImages}</p>
                   </div>
                   <div className="rounded-lg border p-4">
-                    <p className="text-sm text-muted-foreground">存储使用量</p>
-                    <p className="text-2xl font-bold mt-1">
+                    <p className="text-sm text-muted-foreground">存储用量</p>
+                    <p className="mt-1 text-2xl font-bold">
                       {(usage.storageUsed / 1024 / 1024).toFixed(1)} MB
                     </p>
                   </div>
                 </div>
               ) : (
-                <p className="text-muted-foreground">暂无统计数据</p>
+                <p className="text-muted-foreground">暂无用量数据</p>
               )}
             </CardContent>
           </Card>

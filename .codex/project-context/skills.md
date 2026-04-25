@@ -31,8 +31,8 @@
 
 ## 推荐优先级
 
-1. `saas-ai-provider-integration`
+1. `encoding-i18n-cleanup`
 2. `next-prisma-api-guardrails`
 3. `studio-canvas-workflow`
-4. `dashboard-ui-builder`
-5. `encoding-i18n-cleanup`
+4. `saas-ai-provider-integration`
+5. `dashboard-ui-builder`
