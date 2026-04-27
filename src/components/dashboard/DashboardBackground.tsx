@@ -32,7 +32,7 @@ export default function DashboardBackground({
           />
         )}
       </div>
-      <div className="absolute inset-0 bg-white/15" />
+      <div className="absolute inset-0 bg-[#fff1df]/5" /> {/* 这里是为了增加一个半透明的遮罩层数字为模糊度 */}
     </div>
   )
 }
