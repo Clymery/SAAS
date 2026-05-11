@@ -39,3 +39,15 @@ next-env.d.ts
 
 # local personal notes
 /docs/local/
+
+# env files with secrets (use .env.example for reference)
+.env
+
+# local database
+prisma/dev.db
+prisma/*.db-journal
+
+# generated images from AI
+/public/uploads/*.jpg
+/public/uploads/*.png
+/public/uploads/*.webp
